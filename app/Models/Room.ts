@@ -14,9 +14,6 @@ export default class Room extends BaseModel {
   @column()
   public available: boolean;
 
-  @column()
-  public description: string;
-
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime;
 
