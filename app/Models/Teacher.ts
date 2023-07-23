@@ -12,7 +12,7 @@ export default class Teacher extends BaseModel {
   public email: string;
 
   @column()
-  public birthdate: string;
+  public birthdate: DateTime;
 
   @column()
   public enrollment: string;
