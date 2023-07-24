@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       table.integer("number").notNullable();
       table.integer("capacity").notNullable();
       table.boolean("available").notNullable();
-      table.string("teacherEnrollment").notNullable();
+      table.string("teacher_enrollment").notNullable();
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL

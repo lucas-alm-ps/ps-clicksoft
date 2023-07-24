@@ -1,5 +1,5 @@
-import { schema, CustomMessages } from '@ioc:Adonis/Core/Validator'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { schema, CustomMessages } from "@ioc:Adonis/Core/Validator";
+import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
 export default class UpdateRoomValidator {
   constructor(protected ctx: HttpContextContract) {}
@@ -16,10 +16,10 @@ export default class UpdateRoomValidator {
     number: schema.number.optional(),
     capacity: schema.number.optional(),
     available: schema.boolean.optional(),
-    enrollment: schema.string(),
+    teacherEnrollment: schema.string(),
   });
 
   public messages: CustomMessages = {
-    "enrollment.required": "Campo enrollment é obrigatório"
+    "enrollment.required": "Campo enrollment é obrigatório",
   };
 }
