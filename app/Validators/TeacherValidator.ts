@@ -1,4 +1,4 @@
-import { schema, CustomMessages } from "@ioc:Adonis/Core/Validator";
+import { schema, CustomMessages, rules } from "@ioc:Adonis/Core/Validator";
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
 export default class TeacherValidator {
@@ -14,15 +14,15 @@ export default class TeacherValidator {
 
   public schema = schema.create({
     name: schema.string(),
-    email: schema.string(),
+    email: schema.string({}, [rules.email()]),
     enrollment: schema.string(),
-    birthDate: schema.date({ format: "dd/MM/yyyy" }),
+    birthdate: schema.date({ format: "dd/MM/yyyy" }),
   });
 
   public messages: CustomMessages = {
     "name.required": "Campo name é obrigatório",
     "email.required": "Campo email é obrigatório",
     "enrollment.required": "Campo enrollment é obrigatório",
-    "birthDate.required": "Campo birthDate é obrigatório",
+    "birthdate.required": "Campo birthDate é obrigatório",
   };
 }
