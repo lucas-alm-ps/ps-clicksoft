@@ -16,7 +16,6 @@ export default class UpdateRoomValidator {
     number: schema.number.optional(),
     capacity: schema.number.optional(),
     available: schema.boolean.optional(),
-    teacherEnrollment: schema.string(),
   });
 
   public messages: CustomMessages = {
