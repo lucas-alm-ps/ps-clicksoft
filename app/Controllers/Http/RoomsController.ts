@@ -49,6 +49,23 @@ export default class RoomsController {
     return response.status(204);
   }
 
+  public async destroy({request, response, params}: HttpContextContract) {
+    await this.checkIdParams(response, params.id);
+
+    await request.validate(UpdateRoomValidator);
+
+    const data = request.only(['enrollment']);
+
+    await this.checkIfUserIsTeacher(response, data.enrollment);
+
+    const room = await Room.findBy('number', params.id);
+    if(!room) return response.status(404);
+    
+    await room.delete();
+
+    return response.status(204);
+  }
+
   private checkIdParams(response: ResponseContract, id: string) {
     if (!id)
       return response.status(400).json({ error: "Missing room number" });
