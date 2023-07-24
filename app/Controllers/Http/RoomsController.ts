@@ -14,23 +14,29 @@ export default class RoomsController {
       "enrollment",
     ]);
 
-    if (!this.checkIfUserIsTeacher(data.enrollment)) {
+    const teacherExists = await await Teacher.findBy(
+      "enrollment",
+      data.enrollment
+    );
+    if (!teacherExists) {
       return response.status(400).json({
         error: "User is not a teacher",
       });
     }
 
-    await Room.create(data);
+    const roomAlreadyExists = await Room.findBy("number", data.number);
+    if (roomAlreadyExists) {
+      return response.status(400).json({
+        error: "Room number is already in use",
+      });
+    }
+
+    await Room.create({
+      number: data.number,
+      capacity: data.capacity,
+      available: data.available,
+    });
 
     return response.status(201);
-  }
-
-  private async checkIfUserIsTeacher(enrollment: string) {
-    const teacher = Teacher.findBy("enrollment", enrollment);
-
-    if (!teacher) {
-      return false;
-    }
-    return true;
   }
 }
