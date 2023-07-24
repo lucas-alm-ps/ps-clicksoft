@@ -8,8 +8,8 @@ export default class extends BaseSchema {
       table.increments("id");
       table.string("name").notNullable();
       table.string("email").notNullable();
-      table.date("birthdate").notNullable();
-      table.string("enrollment").notNullable();
+      table.string("birthdate").notNullable();
+      table.string("enrollment").notNullable().unique();
 
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
