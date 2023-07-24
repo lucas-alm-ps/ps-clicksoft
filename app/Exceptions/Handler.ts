@@ -22,11 +22,18 @@ export default class ExceptionHandler extends HttpExceptionHandler {
   }
 
   public async handle(error, ctx) {
+    if (error.code === "E_VALIDATION_FAILURE") {
+      return ctx.response.status(error.status).json({
+        error: error.messages,
+      });
+    }
+
     if (error.code !== 500) {
       return ctx.response.status(error.status).json({
         error: error.message,
       });
     }
+
     return ctx.response.status(error.status).json({
       error: "Something went wrong",
     });
