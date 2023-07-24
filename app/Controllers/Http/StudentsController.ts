@@ -2,10 +2,9 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Student from "App/Models/Student";
 import StudentValidator from "App/Validators/StudentValidator";
 import UpdateStudentValidator from "App/Validators/UpdateStudentValidator";
-import NotFoundException from "App/Exceptions/NotFoundException";
-import BadRequestException from "App/Exceptions/BadRequestException";
-import ConflictException from "App/Exceptions/ConflictException";
 import dayjs from "dayjs";
+import { Exception } from "@adonisjs/core/build/standalone";
+import httpStatus from "http-status";
 
 export default class StudentsController {
   public async store({ request, response }: HttpContextContract) {
@@ -35,7 +34,8 @@ export default class StudentsController {
 
     const student = await Student.findBy("enrollment", params.id);
 
-    if (!student) throw new NotFoundException("Student not found");
+    if (!student)
+      throw new Exception("Student not found", httpStatus.NOT_FOUND);
 
     return response.status(200).json(student);
   }
@@ -46,7 +46,8 @@ export default class StudentsController {
 
     const student = await Student.findBy("enrollment", params.id);
 
-    if (!student) throw new NotFoundException("Student not found");
+    if (!student)
+      throw new Exception("Student not found", httpStatus.NOT_FOUND);
 
     await student.delete();
 
@@ -55,7 +56,10 @@ export default class StudentsController {
 
   public async update({ request, response, params }: HttpContextContract) {
     if (!params.id)
-      throw new BadRequestException("Missing student enrollment param");
+      throw new Exception(
+        "Missing student enrollment param",
+        httpStatus.BAD_REQUEST
+      );
 
     const data = request.only([
       "name",
@@ -68,7 +72,8 @@ export default class StudentsController {
 
     const student = await Student.findBy("enrollment", params.id);
 
-    if (!student) throw new NotFoundException("Student not found");
+    if (!student)
+      throw new Exception("Student not found", httpStatus.NOT_FOUND);
 
     if (data.email && data.email !== student.email)
       await this.checkIfEmailIsInUse(data.email);
@@ -87,16 +92,19 @@ export default class StudentsController {
 
   private async checkIfEmailIsInUse(email: string) {
     const student = await Student.findBy("email", email);
-    if (student) throw new ConflictException("Email already in use");
+    if (student)
+      throw new Exception("Email already in use", httpStatus.CONFLICT);
   }
 
   private async checkIfEnrollmentIsInUse(enrollment: string) {
     const student = await Student.findBy("enrollment", enrollment);
-    if (student) throw new ConflictException("Enrollment already in use");
+    if (student)
+      throw new Exception("Enrollment already in use", httpStatus.CONFLICT);
   }
 
   private checkIfDateIsValid(date: string) {
     const dateIsValid = dayjs(date, "DD/MM/YYYY").isValid();
-    if (!dateIsValid) throw new BadRequestException("Invalid date");
+    if (!dateIsValid)
+      throw new Exception("Invalid date", httpStatus.BAD_REQUEST);
   }
 }

@@ -2,11 +2,9 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Room from "App/Models/Room";
 import Teacher from "App/Models/Teacher";
 import CreateRoomValidator from "App/Validators/CreateRoomValidator";
-import { ResponseContract } from "@ioc:Adonis/Core/Response";
 import UpdateRoomValidator from "App/Validators/UpdateRoomValidator";
-import {} from "@ioc:Adonis/Core/HttpExceptionHandler";
-import NotFoundException from "App/Exceptions/NotFoundException";
-import ConflictException from "App/Exceptions/ConflictException";
+import { Exception } from "@adonisjs/core/build/standalone";
+import httpStatus from "http-status";
 
 export default class RoomsController {
   public async store({ request, response }: HttpContextContract) {
@@ -76,16 +74,19 @@ export default class RoomsController {
   }
 
   private checkIdParams(id: string) {
-    if (!id) throw new NotFoundException("Missing room number param");
+    if (!id)
+      throw new Exception("Missing room number param", httpStatus.BAD_REQUEST);
   }
 
   private async checkIfRoomNumberIsInUse(number: number) {
     const roomAlreadyExists = await Room.findBy("number", number);
-    if (roomAlreadyExists) throw new ConflictException("Room number is in use");
+    if (roomAlreadyExists)
+      throw new Exception("Room number is in use", httpStatus.CONFLICT);
   }
 
   private async checkIfUserIsTeacher(enrollment: string) {
     const teacherExists = await Teacher.findBy("enrollment", enrollment);
-    if (!teacherExists) throw new NotFoundException("Teacher not found");
+    if (!teacherExists)
+      throw new Exception("Teacher not found", httpStatus.NOT_FOUND);
   }
 }

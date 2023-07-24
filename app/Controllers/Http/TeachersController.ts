@@ -1,11 +1,10 @@
+import { Exception } from "@adonisjs/core/build/standalone";
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
-import BadRequestException from "App/Exceptions/BadRequestException";
-import ConflictException from "App/Exceptions/ConflictException";
-import NotFoundException from "App/Exceptions/NotFoundException";
 import Teacher from "App/Models/Teacher";
 import TeacherValidator from "App/Validators/TeacherValidator";
 import UpdateStudentValidator from "App/Validators/UpdateStudentValidator";
 import dayjs from "dayjs";
+import httpStatus from "http-status";
 
 export default class TeachersController {
   public async store({ request, response }: HttpContextContract) {
@@ -64,7 +63,8 @@ export default class TeachersController {
     await request.validate(UpdateStudentValidator);
 
     const teacher = await Teacher.findBy("enrollment", params.id);
-    if (!teacher) throw new NotFoundException("Teacher not found");
+    if (!teacher)
+      throw new Exception("Teacher not found", httpStatus.NOT_FOUND);
 
     if (data.email && data.email !== teacher.email)
       await this.checkIfEmailIsInUse(data.email);
@@ -81,16 +81,19 @@ export default class TeachersController {
 
   private async checkIfEmailIsInUse(email: string) {
     const teacher = await Teacher.findBy("email", email);
-    if (teacher) throw new ConflictException("Email already in use");
+    if (teacher)
+      throw new Exception("Email already in use", httpStatus.CONFLICT);
   }
 
   private async checkIfEnrollmentIsInUse(enrollment: string) {
     const teacher = await Teacher.findBy("enrollment", enrollment);
-    if (teacher) throw new ConflictException("Enrollment already in use");
+    if (teacher)
+      throw new Exception("Enrollment already in use", httpStatus.CONFLICT);
   }
 
   private checkIfDateIsValid(date: string) {
     const dateIsValid = dayjs(date, "DD/MM/YYYY").isValid();
-    if (!dateIsValid) throw new BadRequestException("Invalid date");
+    if (!dateIsValid)
+      throw new Exception("Invalid date", httpStatus.BAD_REQUEST);
   }
 }
