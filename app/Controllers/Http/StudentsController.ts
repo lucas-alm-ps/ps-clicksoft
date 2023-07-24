@@ -2,6 +2,7 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Student from "App/Models/Student";
 import StudentValidator from "App/Validators/StudentValidator";
 import UpdateStudentValidator from "App/Validators/UpdateStudentValidator";
+import {ResponseContract} from '@ioc:Adonis/Core/Response';
 import dayjs from "dayjs";
 
 export default class StudentsController {
@@ -10,28 +11,16 @@ export default class StudentsController {
 
     await request.validate(StudentValidator);
 
-    const emailAlreadyInUse = await this.checkIfEmailIsInUse(data.email);
-    const enrollmentAlreadyInUse = await this.checkIfEnrollmentIsInUse(
+    
+    await this.checkIfEnrollmentIsInUse(
+      response, 
       data.enrollment
     );
 
-    if (emailAlreadyInUse) {
-      return response.status(400).json({
-        error: "Email already in use",
-      });
-    }
+    await this.checkIfEmailIsInUse(response, data.email);
 
-    if (enrollmentAlreadyInUse) {
-      return response.status(400).json({
-        error: "Enrollment already in use",
-      });
-    }
-
-    if (!this.checkIfDateIsValid(data.birthdate)) {
-      return response.status(400).json({
-        error: "Invalid date",
-      });
-    }
+    this.checkIfDateIsValid(response, data.birthdate);
+     
 
     await Student.create(data);
 
@@ -86,31 +75,13 @@ export default class StudentsController {
       });
     }
 
-    if (data.email && data.email !== student.email) {
-      const emailAlreadyInUse = await this.checkIfEmailIsInUse(data.email);
-      if (emailAlreadyInUse) {
-        return response.status(400).json({
-          error: "Email already in use",
-        });
-      }
-    }
+    if (data.email && data.email !== student.email) 
+      await this.checkIfEmailIsInUse(response, data.email);
 
-    if (data.enrollment && data.enrollment !== student.enrollment) {
-      const enrollmentAlreadyInUse = await this.checkIfEnrollmentIsInUse(
-        data.enrollment
-      );
-      if (enrollmentAlreadyInUse) {
-        return response.status(400).json({
-          error: "Enrollment already in use",
-        });
-      }
-    }
+    if (data.enrollment && data.enrollment !== student.enrollment) 
+      await this.checkIfEnrollmentIsInUse(response, data.enrollment);
 
-    if (data.birthdate && !this.checkIfDateIsValid(data.birthdate)) {
-      return response.status(400).json({
-        error: "Invalid date",
-      });
-    }
+    if (data.birthdate) this.checkIfDateIsValid(response, data.birthdate);
 
     student.merge(data);
 
@@ -119,20 +90,32 @@ export default class StudentsController {
     return response.status(204);
   }
 
-  private async checkIfEmailIsInUse(email: string) {
+
+
+  private async checkIfEmailIsInUse(response: ResponseContract, email: string) {
     const student = await Student.findBy("email", email);
-    if (student) return true;
-    return false;
+    if (student) {
+      return response.status(400).json({
+        error: "Email already in use",
+      });
+    }
   }
 
-  private async checkIfEnrollmentIsInUse(enrollment: string) {
+  private async checkIfEnrollmentIsInUse(response: ResponseContract, enrollment: string) {
     const student = await Student.findBy("enrollment", enrollment);
-    if (student) return true;
-    return false;
+    if (student) {
+      return response.status(400).json({
+        error: "Enrollment already in use",
+      });
+    }
   }
 
-  private checkIfDateIsValid(date: string) {
+  private checkIfDateIsValid(response: ResponseContract, date: string) {
     const dateIsValid = dayjs(date, "DD/MM/YYYY").isValid();
-    return dateIsValid;
+    if(!dateIsValid) {
+      return response.status(400).json({
+        error: "Invalid date",
+      });
+    }
   }
 }
