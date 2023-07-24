@@ -18,11 +18,4 @@ export default class UpdateStudentValidator {
     enrollment: schema.string.optional(),
     birthDate: schema.date.optional({ format: "dd/MM/yyyy" }),
   });
-
-  public messages: CustomMessages = {
-    "name.required": "Campo name é obrigatório",
-    "email.required": "Campo email é obrigatório",
-    "enrollment.required": "Campo enrollment é obrigatório",
-    "birthDate.required": "Campo birthDate é obrigatório",
-  };
 }
