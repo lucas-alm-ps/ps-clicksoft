@@ -2,25 +2,27 @@ import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 import Student from "App/Models/Student";
 import StudentValidator from "App/Validators/StudentValidator";
 import UpdateStudentValidator from "App/Validators/UpdateStudentValidator";
-import {ResponseContract} from '@ioc:Adonis/Core/Response';
+import NotFoundException from "App/Exceptions/NotFoundException";
+import BadRequestException from "App/Exceptions/BadRequestException";
+import ConflictException from "App/Exceptions/ConflictException";
 import dayjs from "dayjs";
 
 export default class StudentsController {
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only(["name", "email", "enrollment", "birthdate"]);
+    const data = request.only([
+      "name",
+      "email",
+      "teacherEnrollment",
+      "birthdate",
+    ]);
 
     await request.validate(StudentValidator);
 
-    
-    await this.checkIfEnrollmentIsInUse(
-      response, 
-      data.enrollment
-    );
+    await this.checkIfEnrollmentIsInUse(data.teacherEnrollment);
 
-    await this.checkIfEmailIsInUse(response, data.email);
+    await this.checkIfEmailIsInUse(data.email);
 
-    this.checkIfDateIsValid(response, data.birthdate);
-     
+    this.checkIfDateIsValid(data.birthdate);
 
     await Student.create(data);
 
@@ -33,11 +35,7 @@ export default class StudentsController {
 
     const student = await Student.findBy("enrollment", params.id);
 
-    if (!student) {
-      return response.status(404).json({
-        error: "Student not found",
-      });
-    }
+    if (!student) throw new NotFoundException("Student not found");
 
     return response.status(200).json(student);
   }
@@ -48,11 +46,7 @@ export default class StudentsController {
 
     const student = await Student.findBy("enrollment", params.id);
 
-    if (!student) {
-      return response.status(404).json({
-        error: "Student not found",
-      });
-    }
+    if (!student) throw new NotFoundException("Student not found");
 
     await student.delete();
 
@@ -61,27 +55,28 @@ export default class StudentsController {
 
   public async update({ request, response, params }: HttpContextContract) {
     if (!params.id)
-      return response.status(400).json({ error: "Missing student enrollment" });
+      throw new BadRequestException("Missing student enrollment param");
 
-    const data = request.only(["name", "email", "enrollment", "birthdate"]);
+    const data = request.only([
+      "name",
+      "email",
+      "teacherEnrollment",
+      "birthdate",
+    ]);
 
     await request.validate(UpdateStudentValidator);
 
     const student = await Student.findBy("enrollment", params.id);
 
-    if (!student) {
-      return response.status(404).json({
-        error: "Student not found",
-      });
-    }
+    if (!student) throw new NotFoundException("Student not found");
 
-    if (data.email && data.email !== student.email) 
-      await this.checkIfEmailIsInUse(response, data.email);
+    if (data.email && data.email !== student.email)
+      await this.checkIfEmailIsInUse(data.email);
 
-    if (data.enrollment && data.enrollment !== student.enrollment) 
-      await this.checkIfEnrollmentIsInUse(response, data.enrollment);
+    if (data.teacherEnrollment && data.teacherEnrollment !== student.enrollment)
+      await this.checkIfEnrollmentIsInUse(data.teacherEnrollment);
 
-    if (data.birthdate) this.checkIfDateIsValid(response, data.birthdate);
+    if (data.birthdate) this.checkIfDateIsValid(data.birthdate);
 
     student.merge(data);
 
@@ -90,32 +85,18 @@ export default class StudentsController {
     return response.status(204);
   }
 
-
-
-  private async checkIfEmailIsInUse(response: ResponseContract, email: string) {
+  private async checkIfEmailIsInUse(email: string) {
     const student = await Student.findBy("email", email);
-    if (student) {
-      return response.status(400).json({
-        error: "Email already in use",
-      });
-    }
+    if (student) throw new ConflictException("Email already in use");
   }
 
-  private async checkIfEnrollmentIsInUse(response: ResponseContract, enrollment: string) {
+  private async checkIfEnrollmentIsInUse(enrollment: string) {
     const student = await Student.findBy("enrollment", enrollment);
-    if (student) {
-      return response.status(400).json({
-        error: "Enrollment already in use",
-      });
-    }
+    if (student) throw new ConflictException("Enrollment already in use");
   }
 
-  private checkIfDateIsValid(response: ResponseContract, date: string) {
+  private checkIfDateIsValid(date: string) {
     const dateIsValid = dayjs(date, "DD/MM/YYYY").isValid();
-    if(!dateIsValid) {
-      return response.status(400).json({
-        error: "Invalid date",
-      });
-    }
+    if (!dateIsValid) throw new BadRequestException("Invalid date");
   }
 }

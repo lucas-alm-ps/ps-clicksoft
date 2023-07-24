@@ -1,4 +1,7 @@
 import type { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
+import BadRequestException from "App/Exceptions/BadRequestException";
+import ConflictException from "App/Exceptions/ConflictException";
+import NotFoundException from "App/Exceptions/NotFoundException";
 import Teacher from "App/Models/Teacher";
 import TeacherValidator from "App/Validators/TeacherValidator";
 import UpdateStudentValidator from "App/Validators/UpdateStudentValidator";
@@ -10,28 +13,10 @@ export default class TeachersController {
 
     await request.validate(TeacherValidator);
 
-    const emailAlreadyInUse = await this.checkIfEmailIsInUse(data.email);
-    const enrollmentAlreadyInUse = await this.checkIfEnrollmentIsInUse(
-      data.enrollment
-    );
+    await this.checkIfEmailIsInUse(data.email);
+    await this.checkIfEnrollmentIsInUse(data.enrollment);
 
-    if (emailAlreadyInUse) {
-      return response.status(400).json({
-        error: "Email already in use",
-      });
-    }
-
-    if (enrollmentAlreadyInUse) {
-      return response.status(400).json({
-        error: "Enrollment already in use",
-      });
-    }
-
-    if (!this.checkIfDateIsValid(data.birthdate)) {
-      return response.status(400).json({
-        error: "Invalid date",
-      });
-    }
+    this.checkIfDateIsValid(data.birthdate);
 
     await Teacher.create(data);
 
@@ -79,60 +64,33 @@ export default class TeachersController {
     await request.validate(UpdateStudentValidator);
 
     const teacher = await Teacher.findBy("enrollment", params.id);
+    if (!teacher) throw new NotFoundException("Teacher not found");
 
-    if (!teacher) {
-      return response.status(404).json({
-        error: "Teacher not found",
-      });
-    }
+    if (data.email && data.email !== teacher.email)
+      await this.checkIfEmailIsInUse(data.email);
 
-    if (data.email && data.email !== teacher.email) {
-      const emailAlreadyInUse = await this.checkIfEmailIsInUse(data.email);
-      if (emailAlreadyInUse) {
-        return response.status(400).json({
-          error: "Email already in use",
-        });
-      }
-    }
+    if (data.enrollment && data.enrollment !== teacher.enrollment)
+      await this.checkIfEnrollmentIsInUse(data.enrollment);
 
-    if (data.enrollment && data.enrollment !== teacher.enrollment) {
-      const enrollmentAlreadyInUse = await this.checkIfEnrollmentIsInUse(
-        data.enrollment
-      );
-      if (enrollmentAlreadyInUse) {
-        return response.status(400).json({
-          error: "Enrollment already in use",
-        });
-      }
-    }
-
-    if (data.birthdate && !this.checkIfDateIsValid(data.birthdate)) {
-      return response.status(400).json({
-        error: "Invalid date",
-      });
-    }
+    if (data.birthdate) this.checkIfDateIsValid(data.birthdate);
 
     teacher.merge(data);
-
     await teacher.save();
-
     return response.status(204);
   }
 
   private async checkIfEmailIsInUse(email: string) {
     const teacher = await Teacher.findBy("email", email);
-    if (teacher) return true;
-    return false;
+    if (teacher) throw new ConflictException("Email already in use");
   }
 
   private async checkIfEnrollmentIsInUse(enrollment: string) {
     const teacher = await Teacher.findBy("enrollment", enrollment);
-    if (teacher) return true;
-    return false;
+    if (teacher) throw new ConflictException("Enrollment already in use");
   }
 
   private checkIfDateIsValid(date: string) {
     const dateIsValid = dayjs(date, "DD/MM/YYYY").isValid();
-    return dateIsValid;
+    if (!dateIsValid) throw new BadRequestException("Invalid date");
   }
 }
