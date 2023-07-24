@@ -8,16 +8,11 @@ import httpStatus from "http-status";
 
 export default class StudentsController {
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only([
-      "name",
-      "email",
-      "teacherEnrollment",
-      "birthdate",
-    ]);
+    const data = request.only(["name", "email", "enrollment", "birthdate"]);
 
     await request.validate(StudentValidator);
 
-    await this.checkIfEnrollmentIsInUse(data.teacherEnrollment);
+    await this.checkIfEnrollmentIsInUse(data.enrollment);
 
     await this.checkIfEmailIsInUse(data.email);
 
@@ -61,12 +56,7 @@ export default class StudentsController {
         httpStatus.BAD_REQUEST
       );
 
-    const data = request.only([
-      "name",
-      "email",
-      "teacherEnrollment",
-      "birthdate",
-    ]);
+    const data = request.only(["name", "email", "enrollment", "birthdate"]);
 
     await request.validate(UpdateStudentValidator);
 
@@ -78,12 +68,12 @@ export default class StudentsController {
     if (data.email && data.email !== student.email)
       await this.checkIfEmailIsInUse(data.email);
 
-    if (data.teacherEnrollment && data.teacherEnrollment !== student.enrollment)
-      await this.checkIfEnrollmentIsInUse(data.teacherEnrollment);
+    if (data.enrollment && data.enrollment !== student.enrollment)
+      await this.checkIfEnrollmentIsInUse(data.enrollment);
 
     if (data.birthdate) this.checkIfDateIsValid(data.birthdate);
 
-    student.merge(data);
+    await student.merge(data).save();
 
     await student.save();
 

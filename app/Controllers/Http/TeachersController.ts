@@ -74,8 +74,7 @@ export default class TeachersController {
 
     if (data.birthdate) this.checkIfDateIsValid(data.birthdate);
 
-    teacher.merge(data);
-    await teacher.save();
+    await teacher.merge(data).save();
     return response.status(204);
   }
 
