@@ -55,6 +55,8 @@ export default class StudentsRoomController extends StudentsController {
     if (!student)
       throw new Exception("Student not found", httpStatus.NOT_FOUND);
 
+    await this.checkRoomCapacity(room.number);
+
     await Database.rawQuery(
       `
               INSERT INTO
@@ -67,6 +69,43 @@ export default class StudentsRoomController extends StudentsController {
     );
 
     return response.status(201);
+  }
+
+  private async destroy({
+    request,
+    response,
+    params,
+    teacher,
+  }: TeacherAuthRequest) {
+    const { room_id: roomNumber, id: studentEnrollment } = params;
+    await this.checkIdParams(params.room_id);
+    await this.checkIdParams(params.id);
+
+    await this.checkIfTeacherOwnsRoom(teacher.enrollment, params.room_id);
+
+    await request.validate(AssignRoomValidator);
+
+    const room = await Room.findBy("number", roomNumber);
+
+    if (!room) throw new Exception("Room not found", httpStatus.NOT_FOUND);
+
+    const student = await Student.findBy("enrollment", studentEnrollment);
+
+    if (!student)
+      throw new Exception("Student not found", httpStatus.NOT_FOUND);
+
+    await Database.rawQuery(
+      `
+        DELETE FROM
+            students_rooms
+        WHERE
+            student_enrollment = ?
+        AND
+            room_number = ?
+      `,
+      [student.enrollment, Number(room.number)]
+    );
+    return response.status(204);
   }
 
   private async checkIfTeacherOwnsRoom(
