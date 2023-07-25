@@ -71,7 +71,7 @@ export default class StudentsRoomController extends StudentsController {
     return response.status(201);
   }
 
-  private async destroy({
+  public async destroy({
     request,
     response,
     params,
