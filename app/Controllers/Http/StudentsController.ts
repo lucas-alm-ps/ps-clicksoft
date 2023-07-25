@@ -24,8 +24,7 @@ export default class StudentsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
-    if (!params.id)
-      return response.status(400).json({ error: "Missing student enrollment" });
+    this.checkIdParams(params.id);
 
     const student = await Student.findBy("enrollment", params.id);
 
@@ -36,8 +35,7 @@ export default class StudentsController {
   }
 
   public async destroy({ params, response }: HttpContextContract) {
-    if (!params.id)
-      return response.status(400).json({ error: "Missing student enrollment" });
+    this.checkIdParams(params.id);
 
     const student = await Student.findBy("enrollment", params.id);
 
@@ -50,11 +48,7 @@ export default class StudentsController {
   }
 
   public async update({ request, response, params }: HttpContextContract) {
-    if (!params.id)
-      throw new Exception(
-        "Missing student enrollment param",
-        httpStatus.BAD_REQUEST
-      );
+    this.checkIdParams(params.id);
 
     const data = request.only(["name", "email", "enrollment", "birthdate"]);
 
@@ -78,6 +72,39 @@ export default class StudentsController {
     await student.save();
 
     return response.status(204);
+  }
+
+  public async getStudentInfo({ params, response }: HttpContextContract) {
+    this.checkIdParams(params.enrollment);
+
+    const student = await Student.findBy("enrollment", params.enrollment);
+
+    if (!student)
+      throw new Exception("Student not found", httpStatus.NOT_FOUND);
+
+    const rooms = await student
+      .related("rooms")
+      .query()
+      .rightJoin("teachers", "teachers.enrollment", "rooms.teacher_enrollment")
+      .select("rooms.*", "teachers.name as teacher_name");
+
+    const formattedRooms = rooms.map((room) => {
+      return {
+        number: room.number,
+        capacity: room.capacity,
+        teacher: room.$extras.teacher_name,
+      };
+    });
+
+    return response.status(200).json({ student, rooms: formattedRooms });
+  }
+
+  private checkIdParams(id: string) {
+    if (!id)
+      throw new Exception(
+        "Missing student enrollment param",
+        httpStatus.BAD_REQUEST
+      );
   }
 
   private async checkIfEmailIsInUse(email: string) {

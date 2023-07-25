@@ -11,4 +11,5 @@ Route.group(() => {
     .except(["show", "update"])
     .middleware({ "*": "teacherAuth" })
     .apiOnly();
+  Route.get("students/:enrollment/info", "StudentsController.getStudentInfo");
 }).prefix("/api/");
