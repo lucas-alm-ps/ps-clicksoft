@@ -5,8 +5,7 @@ export default class extends BaseSchema {
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments("id");
-      table.integer("number").notNullable();
+      table.integer("number").notNullable().primary();
       table.integer("capacity").notNullable();
       table.boolean("available").notNullable();
       table.string("teacher_enrollment").notNullable();
